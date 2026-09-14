@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<application xmlns="urn:schemas-microsoft-com:asm.v3">
+  <windowsSettings>
+    <!--
+      If your application is built for a version of Windows prior to Windows 8.1, 
+      uncomment the following line and set the 'maxversiontested' attribute to 
+      match the target Windows version of your application. This will enable your 
+      application to opt-in to Windows 8.1 and Windows Vista compatibility modes.
+    -->
+    <!--<dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAwareness>-->
+    <!--
+      Opt-in to the Windows 10 Creators Update DPI scaling behavior for high-DPI devices.
+      This will improve the rendering of text in WPF applications on high-DPI displays.
+    -->
+    <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2016/WindowsSettings">PerMonitorV2, PerMonitor</dpiAwareness>
+    <dpiAwareness xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAwareness>
+  </windowsSettings>
+</application>

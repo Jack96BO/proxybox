@@ -20,30 +20,21 @@ services:
       timeout: 5s
       retries: 3
 
-  # Browser Automation with Playwright and Mitmproxy
-  playwright:
+  # Mitmproxy for traffic interception
+  mitmproxy:
     build:
       context: .
-      dockerfile: docker/playwright/Dockerfile
-    container_name: playwright-browser
-    hostname: playwright-browser
+      dockerfile: docker/playwright/api/Dockerfile
+    container_name: mitmproxy-server
+    hostname: mitmproxy-server
     depends_on:
       dnsmasq:
         condition: service_healthy
-    environment:
-      - DNS_SERVER=172.20.0.2
-      - PROXY_SERVER=http://localhost:8080
     ports:
-      - "8080:8080"  # Mitmproxy web interface
-      - "3000:3000"  # Optional: for debugging
+      - "8080:8080"  # Mitmproxy HTTP proxy port
     networks:
       proxy_network:
         ipv4_address: 172.20.0.3
-    dns:
-      - 172.20.0.2  # Use our dnsmasq server
-      - 8.8.8.8     # Fallback to Google DNS
-    volumes:
-      - ./screenshots:/app/screenshots
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
@@ -51,20 +42,48 @@ services:
       timeout: 5s
       retries: 3
 
+  # REST API Backend with Playwright
+  api:
+    build:
+      context: .
+      dockerfile: docker/playwright/api/Dockerfile
+    container_name: proxybox-api
+    hostname: proxybox-api
+    depends_on:
+      mitmproxy:
+        condition: service_healthy
+    ports:
+      - "5000:5000"  # Flask API port
+    environment:
+      - PROXY_SERVER=http://mitmproxy:8080
+      - DNS_SERVER=172.20.0.2
+    networks:
+      proxy_network:
+        ipv4_address: 172.20.0.4
+    dns:
+      - 172.20.0.2  # Use dnsmasq for DNS
+      - 8.8.8.8     # Fallback to Google DNS
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
   # Optional: Standalone Mitmproxy for advanced traffic manipulation
-  mitmproxy:
+  mitmproxy-standalone:
     image: python:3.10-slim
     container_name: mitmproxy-standalone
     hostname: mitmproxy-standalone
     command: sh -c "pip install mitmproxy && mitmproxy -s /app/mitmproxy_script.py --listen-port 8080 --web-iface 0.0.0.0"
     volumes:
-      - ./docker/playwright/scripts/mitmproxy_script.py:/app/mitmproxy_script.py
+      - ./api/mitmproxy_script.py:/app/mitmproxy_script.py
     ports:
       - "8081:8080"  # Mitmproxy web interface
       - "8082:8081"  # Mitmproxy control port
     networks:
       proxy_network:
-        ipv4_address: 172.20.0.4
+        ipv4_address: 172.20.0.5
     restart: unless-stopped
 
 networks:
