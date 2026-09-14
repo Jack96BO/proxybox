@@ -36,6 +36,7 @@ RUN playwright install chromium --with-deps
 WORKDIR /app
 COPY api/app.py /app/app.py
 COPY api/mitmproxy_script.py /app/mitmproxy_script.py
+COPY api/templates /app/templates
 
 # 5. Crea script di avvio per tutti i servizi
 RUN echo '#!/bin/sh' > /app/start.sh && \
