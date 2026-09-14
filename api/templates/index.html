@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProxyBox - Web Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            border-radius: 10px;
+        }
+        
+        h1 {
+            color: #667eea;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            font-size: 1.1em;
+        }
+        
+        .status-bar {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        
+        .status-dot.online {
+            background: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
+        }
+        
+        .status-dot.offline {
+            background: #f44336;
+            box-shadow: 0 0 5px #f44336;
+        }
+        
+        .status-dot.warning {
+            background: #FF9800;
+            box-shadow: 0 0 5px #FF9800;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #555;
+        }
+        
+        input[type="text"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        
+        input[type="text"]:focus,
+        input[type="url"]:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button i {
+            font-size: 16px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .view-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .view-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 14px;
+            border-bottom: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab:hover {
+            color: #667eea;
+        }
+        
+        .view-content {
+            padding: 10px 0;
+        }
+        
+        .screenshot-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .screenshot-container img {
+            max-width: 100%;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        
+        .screenshot-container img:hover {
+            transform: scale(1.02);
+        }
+        
+        .content-display {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-align: left;
+        }
+        
+        .pages-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .page-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .page-card:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .page-card.active {
+            background: #e3f2fd;
+            border-color: #667eea;
+        }
+        
+        .page-card h3 {
+            font-size: 14px;
+            margin-bottom: 5px;
+            color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .page-card p {
+            font-size: 12px;
+            color: #666;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .loading::after {
+            content: '...';
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60%, 100% { content: '...'; }
+        }
+        
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #ef9a9a;
+        }
+        
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+            border: 1px solid #a5d6a7;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>🌐 ProxyBox Dashboard</h1>
+            <p class="subtitle">Browser Automation & Traffic Interception</p>
+        </div>
+    </header>
+    
+    <div class="container">
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-dot online"></span>
+                <span><strong>API Status:</strong> <span id="api-status">Loading...</span></span>
+            </div>
+            <div class="status-item">
+                <span class="status-dot" id="browser-status-dot"></span>
+                <span><strong>Browser:</strong> <span id="browser-status">Loading...</span></span>
+            </div>
+            <div class="status-item">
+                <span><strong>Pages:</strong> <span id="pages-count">0</span></span>
+            </div>
+            <div class="status-item">
+                <span><strong>Proxy:</strong> <span id="proxy-status">http://localhost:8080</span></span>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="url-input">URL:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="url" id="url-input" placeholder="http://ilmiosito.com" value="http://ilmiosito.com">
+                    <button onclick="navigateToUrl()"><i>🔍</i> Go</button>
+                    <button onclick="reloadPage()"><i>🔄</i> Reload</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <div class="button-group">
+                    <button onclick="createNewPage()"><i>📄</i> New Page</button>
+                    <button onclick="takeScreenshot()"><i>📷</i> Screenshot</button>
+                    <button onclick="getHtmlContent()"><i>📄</i> HTML</button>
+                    <button onclick="getTextContent()"><i>📝</i> Text</button>
+                    <button onclick="executeJs()"><i>⚡</i> Run JS</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <label for="js-code">JavaScript Code:</label>
+                <textarea id="js-code" placeholder="// Enter JavaScript code here
+console.log('Hello from ProxyBox!');"></textarea>
+            </div>
+            
+            <div class="control-group">
+                <label for="selector">CSS Selector:</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="selector" placeholder="input, button, a">
+                    <input type="text" id="fill-value" placeholder="Value">
+                    <button onclick="clickElement()"><i>🖱️</i> Click</button>
+                    <button onclick="fillForm()"><i>✏️</i> Fill</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="view-section">
+            <div class="view-tabs">
+                <button class="tab active" onclick="switchTab('screenshot')">📷 Screenshot</button>
+                <button class="tab" onclick="switchTab('html')">📄 HTML</button>
+                <button class="tab" onclick="switchTab('text')">📝 Text</button>
+                <button class="tab" onclick="switchTab('pages')">📚 Pages</button>
+            </div>
+            
+            <div class="view-content">
+                <div id="screenshot-view" class="view-pane">
+                    <div class="screenshot-container">
+                        <img id="screenshot-img" style="display: none;" alt="Screenshot">
+                        <p style="color: #999;" id="screenshot-placeholder">No screenshot yet. Click "Screenshot" to capture one.</p>
+                    </div>
+                </div>
+                
+                <div id="html-view" class="view-pane" style="display: none;">
+                    <div class="content-display" id="html-content"></div>
+                </div>
+                
+                <div id="text-view" class="view-pane" style="display: none;">
+                    <div class="content-display" id="text-content"></div>
+                </div>
+                
+                <div id="pages-view" class="view-pane" style="display: none;">
+                    <div class="pages-list" id="pages-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-value" id="stat-requests">0</div>
+                <div class="stat-label">Requests</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-pages">0</div>
+                <div class="stat-label">Pages</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="stat-uptime">0s</div>
+                <div class="stat-label">Uptime</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        let currentPageId = null;
+        let pages = [];
+        let startTime = new Date();
+        
+        // API Base URL
+        const API_BASE = window.location.origin + '/api';
+        
+        // Initialize
+        async function init() {
+            await checkHealth();
+            await refreshPages();
+            updateUptime();
+            setInterval(updateUptime, 1000);
+        }
+        
+        // Check API health
+        async function checkHealth() {
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+                
+                document.getElementById('api-status').textContent = 'Online';
+                document.getElementById('api-status').style.color = '#4CAF50';
+                
+                if (data.browser) {
+                    document.getElementById('browser-status').textContent = 'Running';
+                    document.getElementById('browser-status-dot').className = 'status-dot online';
+                } else {
+                    document.getElementById('browser-status').textContent = 'Stopped';
+                    document.getElementById('browser-status-dot').className = 'status-dot offline';
+                }
+                
+                document.getElementById('pages-count').textContent = data.pages || 0;
+                document.getElementById('stat-pages').textContent = data.pages || 0;
+            } catch (error) {
+                document.getElementById('api-status').textContent = 'Offline';
+                document.getElementById('api-status').style.color = '#f44336';
+                document.getElementById('browser-status').textContent = 'Error';
+                document.getElementById('browser-status-dot').className = 'status-dot offline';
+            }
+        }
+        
+        // Update uptime
+        function updateUptime() {
+            const uptime = Math.floor((new Date() - startTime) / 1000);
+            document.getElementById('stat-uptime').textContent = `${uptime}s`;
+        }
+        
+        // Create new page
+        async function createNewPage() {
+            try {
+                const response = await fetch(`${API_BASE}/page/create`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    currentPageId = data.page_id;
+                    await refreshPages();
+                    showSuccess('New page created!');
+                } else {
+                    showError(data.error || 'Failed to create page');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Navigate to URL
+        async function navigateToUrl() {
+            const url = document.getElementById('url-input').value;
+            if (!url) return showError('Please enter a URL');
+            
+            if (!currentPageId) {
+                await createNewPage();
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/navigate`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    document.getElementById('url-input').value = data.url || url;
+                    showSuccess(`Navigated to ${data.title || url}`);
+                    await refreshPages();
+                } else {
+                    showError(data.error || 'Navigation failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Reload page
+        async function reloadPage() {
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/reload`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess('Page reloaded!');
+                } else {
+                    showError(data.error || 'Reload failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Take screenshot
+        async function takeScreenshot() {
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/screenshot`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ format: 'png', full_page: true })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    document.getElementById('screenshot-img').src = `data:image/png;base64,${data.image}`;
+                    document.getElementById('screenshot-img').style.display = 'block';
+                    document.getElementById('screenshot-placeholder').style.display = 'none';
+                    showSuccess('Screenshot captured!');
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'Screenshot failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Get HTML content
+        async function getHtmlContent() {
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/content`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    document.getElementById('html-content').textContent = data.content;
+                    switchTab('html');
+                    showSuccess('HTML content loaded!');
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'Failed to get HTML');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Get text content
+        async function getTextContent() {
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/text`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    document.getElementById('text-content').textContent = data.text;
+                    switchTab('text');
+                    showSuccess('Text content loaded!');
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'Failed to get text');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Execute JavaScript
+        async function executeJs() {
+            const script = document.getElementById('js-code').value;
+            if (!script) return showError('Please enter JavaScript code');
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/execute`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ script })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess('JavaScript executed! Result: ' + (data.result || 'undefined'));
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'JavaScript execution failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Click element
+        async function clickElement() {
+            const selector = document.getElementById('selector').value;
+            if (!selector) return showError('Please enter a CSS selector');
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/click`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selector })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess('Element clicked!');
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'Click failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Fill form
+        async function fillForm() {
+            const selector = document.getElementById('selector').value;
+            const value = document.getElementById('fill-value').value;
+            if (!selector) return showError('Please enter a CSS selector');
+            if (!currentPageId) return showError('No page selected');
+            
+            try {
+                const response = await fetch(`${API_BASE}/page/${currentPageId}/fill`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ selector, value })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess('Form filled!');
+                    incrementStat('requests');
+                } else {
+                    showError(data.error || 'Fill failed');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // Refresh pages list
+        async function refreshPages() {
+            try {
+                const response = await fetch(`${API_BASE}/pages/list`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    pages = data.pages || [];
+                    const pagesList = document.getElementById('pages-list');
+                    pagesList.innerHTML = '';
+                    
+                    pages.forEach(page => {
+                        const card = document.createElement('div');
+                        card.className = `page-card ${currentPageId === page.page_id ? 'active' : ''}`;
+                        card.onclick = () => selectPage(page.page_id);
+                        card.innerHTML = `
+                            <h3>${page.title || 'Untitled'}</h3>
+                            <p>${page.url || 'No URL'}</p>
+                        `;
+                        pagesList.appendChild(card);
+                    });
+                    
+                    document.getElementById('pages-count').textContent = pages.length;
+                    document.getElementById('stat-pages').textContent = pages.length;
+                }
+            } catch (error) {
+                console.error('Error refreshing pages:', error);
+            }
+        }
+        
+        // Select a page
+        function selectPage(pageId) {
+            currentPageId = pageId;
+            refreshPages();
+            showSuccess(`Selected page ${pageId}`);
+        }
+        
+        // Switch tab
+        function switchTab(tabName) {
+            // Hide all panes
+            document.querySelectorAll('.view-pane').forEach(pane => {
+                pane.style.display = 'none';
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show selected pane
+            document.getElementById(`${tabName}-view`).style.display = 'block';
+            
+            // Add active class to selected tab
+            event.target.classList.add('active');
+        }
+        
+        // Show success message
+        function showSuccess(message) {
+            const div = document.createElement('div');
+            div.className = 'success';
+            div.textContent = message;
+            document.querySelector('.controls').prepend(div);
+            setTimeout(() => div.remove(), 3000);
+            incrementStat('requests');
+        }
+        
+        // Show error message
+        function showError(message) {
+            const div = document.createElement('div');
+            div.className = 'error';
+            div.textContent = message;
+            document.querySelector('.controls').prepend(div);
+            setTimeout(() => div.remove(), 5000);
+        }
+        
+        // Increment stat
+        function incrementStat(statName) {
+            const element = document.getElementById(`stat-${statName}`);
+            const current = parseInt(element.textContent) || 0;
+            element.textContent = current + 1;
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && e.target.id === 'url-input') {
+                navigateToUrl();
+            }
+        });
+        
+        // Initialize on page load
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

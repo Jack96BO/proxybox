@@ -4,7 +4,7 @@ Flask API for controlling Playwright browser remotely
 Supports navigation, screenshot, DOM manipulation, and traffic interception
 """
 
-from flask import Flask, request, jsonify, send_file, Response
+from flask import Flask, request, jsonify, send_file, Response, render_template
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
 import os
@@ -16,6 +16,9 @@ from io import BytesIO
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure templates folder
+app.template_folder = '/app/templates'
 
 # Global variables for browser state
 browser_instance = None
@@ -409,6 +412,19 @@ def resolve_dns():
             })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# HTML Dashboard Route
+@app.route('/')
+def index():
+    """Serve the web dashboard"""
+    return render_template('index.html')
+
+
+@app.route('/dashboard')
+def dashboard():
+    """Redirect to main dashboard"""
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
