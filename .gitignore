@@ -1,0 +1,61 @@
+# Docker
+.docker/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Playwright
+playwright-report/
+test-results/
+
+# Screenshots
+screenshots/
+*.png
+*.jpg
+*.jpeg
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
