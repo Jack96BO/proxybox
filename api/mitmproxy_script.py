@@ -1,6 +1,6 @@
 """
 Mitmproxy script for traffic manipulation in API mode
-- Redirects ilmiosito.com to 10.58.54.2
+- Supports custom DNS routing via Host header manipulation
 - Logs all traffic for debugging
 - Can be extended for advanced traffic manipulation
 """
@@ -8,42 +8,87 @@ Mitmproxy script for traffic manipulation in API mode
 from mitmproxy import http, ctx
 
 
+# Global DNS routing table (domain -> target IP)
+DNS_ROUTES = {}
+
+
 def request(flow: http.HTTPFlow) -> None:
-    """Modify HTTP requests"""
-    # Redirect ilmiosito.com to 10.58.54.2
-    if "ilmiosito.com" in flow.request.pretty_url:
-        ctx.log.info(f"[API] Intercepted request to: {flow.request.pretty_url}")
+    """Modify HTTP requests based on DNS routes"""
+    try:
+        # Check if this request matches any DNS route
+        host = flow.request.host
+        pretty_url = flow.request.pretty_url
         
-        # Change the host to the target IP
-        flow.request.host = "10.58.54.2"
+        # Extract domain from URL
+        domain = host
         
-        # Keep the original Host header for SNI
-        flow.request.headers["Host"] = "ilmiosito.com"
+        # Check if domain has a custom route
+        if domain in DNS_ROUTES:
+            target_ip = DNS_ROUTES[domain]
+            ctx.log.info(f"[API] DNS Route: {domain} -> {target_ip}")
+            
+            # Redirect to target IP
+            flow.request.host = target_ip
+            
+            # Keep the original Host header for SNI and virtual hosting
+            flow.request.headers["Host"] = domain
+            
+            ctx.log.info(f"[API] Redirected request: {pretty_url} -> {target_ip}")
         
-        ctx.log.info(f"[API] Redirected to: {flow.request.host}")
-    
-    # Log all requests
-    ctx.log.info(f"[API] Request: {flow.request.method} {flow.request.pretty_url}")
+        # Log all requests
+        ctx.log.info(f"[API] Request: {flow.request.method} {pretty_url}")
+        
+    except Exception as e:
+        ctx.log.error(f"[API] Error in request handler: {e}")
 
 
 def response(flow: http.HTTPFlow) -> None:
     """Modify HTTP responses"""
-    # Log all responses
-    ctx.log.info(f"[API] Response: {flow.response.status_code} {flow.request.pretty_url}")
-    
-    # Modify responses from the target IP
-    if flow.request.host == "10.58.54.2" or "ilmiosito.com" in flow.request.pretty_url:
-        ctx.log.info(f"[API] Modifying response from: {flow.request.pretty_url}")
+    try:
+        # Log all responses
+        ctx.log.info(f"[API] Response: {flow.response.status_code} {flow.request.pretty_url}")
         
         # Add custom header for API tracking
         flow.response.headers["X-ProxyBox"] = "true"
+        
+    except Exception as e:
+        ctx.log.error(f"[API] Error in response handler: {e}")
 
 
 def configure(updated: bool) -> None:
     """Configure mitmproxy settings"""
-    if updated:
-        return
-    
-    # Enable SSL interception
-    ctx.options.ssl_insecure = True
-    ctx.log.info("[API] Mitmproxy configured for SSL interception")
+    try:
+        if updated:
+            return
+        
+        # Enable SSL interception
+        ctx.options.ssl_insecure = True
+        ctx.log.info("[API] Mitmproxy configured for SSL interception")
+        
+    except Exception as e:
+        ctx.log.error(f"[API] Error in configure: {e}")
+
+
+# Functions to manage DNS routes
+def add_dns_route(domain, ip):
+    """Add a DNS route to the routing table"""
+    DNS_ROUTES[domain] = ip
+    ctx.log.info(f"[API] Added DNS route: {domain} -> {ip}")
+
+
+def remove_dns_route(domain):
+    """Remove a DNS route from the routing table"""
+    if domain in DNS_ROUTES:
+        del DNS_ROUTES[domain]
+        ctx.log.info(f"[API] Removed DNS route: {domain}")
+
+
+def list_dns_routes():
+    """List all DNS routes"""
+    return DNS_ROUTES.copy()
+
+
+def clear_dns_routes():
+    """Clear all DNS routes"""
+    DNS_ROUTES.clear()
+    ctx.log.info("[API] Cleared all DNS routes")

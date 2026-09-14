@@ -54,6 +54,8 @@
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            flex-wrap: wrap;
+            gap: 10px;
         }
         
         .status-item {
@@ -181,6 +183,7 @@
             gap: 10px;
             margin-bottom: 15px;
             border-bottom: 1px solid #eee;
+            flex-wrap: wrap;
         }
         
         .tab {
@@ -205,6 +208,14 @@
         
         .view-content {
             padding: 10px 0;
+        }
+        
+        .view-pane {
+            display: none;
+        }
+        
+        .view-pane.active {
+            display: block;
         }
         
         .screenshot-container {
@@ -344,6 +355,67 @@
             border: 1px solid #a5d6a7;
         }
         
+        .browser-view {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            overflow: hidden;
+        }
+        
+        .browser-view iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .dns-section {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .dns-route {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .dns-route:last-child {
+            border-bottom: none;
+        }
+        
+        .dns-route-info {
+            flex: 1;
+        }
+        
+        .dns-route-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        button.danger {
+            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-row input {
+            flex: 1;
+        }
+        
         @media (max-width: 768px) {
             .container {
                 padding: 10px;
@@ -366,14 +438,18 @@
             button {
                 width: 100%;
             }
+            
+            .form-row {
+                flex-direction: column;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>🌐 ProxyBox Dashboard</h1>
-            <p class="subtitle">Browser Automation & Traffic Interception</p>
+            <h1>\ud83c\udf10 ProxyBox Dashboard</h1>
+            <p class="subtitle">Browser Automation & Traffic Interception with Custom DNS Routing</p>
         </div>
     </header>
     
@@ -393,25 +469,28 @@
             <div class="status-item">
                 <span><strong>Proxy:</strong> <span id="proxy-status">http://localhost:8080</span></span>
             </div>
+            <div class="status-item">
+                <span><strong>DNS Routes:</strong> <span id="dns-routes-count">0</span></span>
+            </div>
         </div>
         
         <div class="controls">
             <div class="control-group">
                 <label for="url-input">URL:</label>
                 <div style="display: flex; gap: 10px;">
-                    <input type="url" id="url-input" placeholder="http://ilmiosito.com" value="http://ilmiosito.com">
-                    <button onclick="navigateToUrl()"><i>🔍</i> Go</button>
-                    <button onclick="reloadPage()"><i>🔄</i> Reload</button>
+                    <input type="url" id="url-input" placeholder="https://example.com" value="https://google.com">
+                    <button onclick="navigateToUrl()"><i>\ud83d\udd0d</i> Go</button>
+                    <button onclick="reloadPage()"><i>\ud83d\udd04</i> Reload</button>
                 </div>
             </div>
             
             <div class="control-group">
                 <div class="button-group">
-                    <button onclick="createNewPage()"><i>📄</i> New Page</button>
-                    <button onclick="takeScreenshot()"><i>📷</i> Screenshot</button>
-                    <button onclick="getHtmlContent()"><i>📄</i> HTML</button>
-                    <button onclick="getTextContent()"><i>📝</i> Text</button>
-                    <button onclick="executeJs()"><i>⚡</i> Run JS</button>
+                    <button onclick="createNewPage()"><i>\ud83d\udcc4</i> New Page</button>
+                    <button onclick="takeScreenshot()"><i>\ud83d\udcf7</i> Screenshot</button>
+                    <button onclick="getHtmlContent()"><i>\ud83d\udcc4</i> HTML</button>
+                    <button onclick="getTextContent()"><i>\ud83d\udcdd</i> Text</button>
+                    <button onclick="executeJs()"><i>\u26a1</i> Run JS</button>
                 </div>
             </div>
             
@@ -426,21 +505,55 @@ console.log('Hello from ProxyBox!');"></textarea>
                 <div style="display: flex; gap: 10px;">
                     <input type="text" id="selector" placeholder="input, button, a">
                     <input type="text" id="fill-value" placeholder="Value">
-                    <button onclick="clickElement()"><i>🖱️</i> Click</button>
-                    <button onclick="fillForm()"><i>✏️</i> Fill</button>
+                    <button onclick="clickElement()"><i>\ud83d\uddb1\ufe0f</i> Click</button>
+                    <button onclick="fillForm()"><i>\u270f\ufe0f</i> Fill</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- DNS Management Section -->
+        <div class="dns-section">
+            <h2 style="margin-bottom: 15px; color: #667eea;">\ud83c\udf10 DNS Routing</h2>
+            <p style="margin-bottom: 15px; color: #666;">Add custom DNS routes to redirect domains to specific IPs</p>
+            
+            <div class="control-group">
+                <label>Add New Route:</label>
+                <div class="form-row">
+                    <input type="text" id="dns-domain" placeholder="example.com">
+                    <input type="text" id="dns-ip" placeholder="10.58.54.2">
+                    <button class="success" onclick="addDnsRoute()"><i>+</i> Add Route</button>
+                </div>
+            </div>
+            
+            <div class="control-group">
+                <button class="danger" onclick="clearDnsRoutes()"><i>\ud83d\uddd1</i> Clear All Routes</button>
+            </div>
+            
+            <div class="control-group">
+                <label>Current Routes:</label>
+                <div id="dns-routes-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px; padding: 10px; background: #f9f9f9;">
+                    <p style="color: #999; text-align: center;">No DNS routes configured</p>
                 </div>
             </div>
         </div>
         
         <div class="view-section">
             <div class="view-tabs">
-                <button class="tab active" onclick="switchTab('screenshot')">📷 Screenshot</button>
-                <button class="tab" onclick="switchTab('html')">📄 HTML</button>
-                <button class="tab" onclick="switchTab('text')">📝 Text</button>
-                <button class="tab" onclick="switchTab('pages')">📚 Pages</button>
+                <button class="tab active" onclick="switchTab(event, 'browser')">\ud83d\udda5 Browser View</button>
+                <button class="tab" onclick="switchTab(event, 'screenshot')">\ud83d\udcf7 Screenshot</button>
+                <button class="tab" onclick="switchTab(event, 'html')">\ud83d\udcc4 HTML</button>
+                <button class="tab" onclick="switchTab(event, 'text')">\ud83d\udcdd Text</button>
+                <button class="tab" onclick="switchTab(event, 'pages')">\ud83d\udcda Pages</button>
             </div>
             
             <div class="view-content">
+                <div id="browser-view" class="view-pane active">
+                    <div style="padding: 20px; text-align: center; color: #999;">
+                        <p>Browser view will appear here when a page is created and navigated.</p>
+                        <p>Use the controls above to navigate to a URL.</p>
+                    </div>
+                </div>
+                
                 <div id="screenshot-view" class="view-pane">
                     <div class="screenshot-container">
                         <img id="screenshot-img" style="display: none;" alt="Screenshot">
@@ -448,15 +561,15 @@ console.log('Hello from ProxyBox!');"></textarea>
                     </div>
                 </div>
                 
-                <div id="html-view" class="view-pane" style="display: none;">
+                <div id="html-view" class="view-pane">
                     <div class="content-display" id="html-content"></div>
                 </div>
                 
-                <div id="text-view" class="view-pane" style="display: none;">
+                <div id="text-view" class="view-pane">
                     <div class="content-display" id="text-content"></div>
                 </div>
                 
-                <div id="pages-view" class="view-pane" style="display: none;">
+                <div id="pages-view" class="view-pane">
                     <div class="pages-list" id="pages-list"></div>
                 </div>
             </div>
@@ -490,8 +603,10 @@ console.log('Hello from ProxyBox!');"></textarea>
         async function init() {
             await checkHealth();
             await refreshPages();
+            await refreshDnsRoutes();
             updateUptime();
             setInterval(updateUptime, 1000);
+            setInterval(refreshDnsRoutes, 5000);
         }
         
         // Check API health
@@ -566,12 +681,29 @@ console.log('Hello from ProxyBox!');"></textarea>
                     document.getElementById('url-input').value = data.url || url;
                     showSuccess(`Navigated to ${data.title || url}`);
                     await refreshPages();
+                    
+                    // Show browser view
+                    switchTab(event, 'browser');
+                    updateBrowserView();
                 } else {
                     showError(data.error || 'Navigation failed');
                 }
             } catch (error) {
                 showError('Error: ' + error.message);
             }
+        }
+        
+        // Update browser view
+        function updateBrowserView() {
+            if (!currentPageId) return;
+            
+            const browserView = document.getElementById('browser-view');
+            const url = document.getElementById('url-input').value;
+            
+            // Create an iframe to display the page through the proxy
+            browserView.innerHTML = `
+                <iframe src="${url}" style="width: 100%; height: 600px; border: none; border-radius: 8px;"></iframe>
+            `;
         }
         
         // Reload page
@@ -584,6 +716,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                 
                 if (data.status === 'ok') {
                     showSuccess('Page reloaded!');
+                    updateBrowserView();
                 } else {
                     showError(data.error || 'Reload failed');
                 }
@@ -610,6 +743,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                     document.getElementById('screenshot-placeholder').style.display = 'none';
                     showSuccess('Screenshot captured!');
                     incrementStat('requests');
+                    switchTab(event, 'screenshot');
                 } else {
                     showError(data.error || 'Screenshot failed');
                 }
@@ -628,7 +762,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                 
                 if (data.status === 'ok') {
                     document.getElementById('html-content').textContent = data.content;
-                    switchTab('html');
+                    switchTab(event, 'html');
                     showSuccess('HTML content loaded!');
                     incrementStat('requests');
                 } else {
@@ -649,7 +783,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                 
                 if (data.status === 'ok') {
                     document.getElementById('text-content').textContent = data.text;
-                    switchTab('text');
+                    switchTab(event, 'text');
                     showSuccess('Text content loaded!');
                     incrementStat('requests');
                 } else {
@@ -736,6 +870,105 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
+        // DNS Management Functions
+        async function addDnsRoute() {
+            const domain = document.getElementById('dns-domain').value;
+            const ip = document.getElementById('dns-ip').value;
+            
+            if (!domain || !ip) return showError('Please enter both domain and IP');
+            
+            try {
+                const response = await fetch(`${API_BASE}/dns/routes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ domain, ip })
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    document.getElementById('dns-domain').value = '';
+                    document.getElementById('dns-ip').value = '';
+                    await refreshDnsRoutes();
+                } else {
+                    showError(data.error || 'Failed to add route');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        async function clearDnsRoutes() {
+            try {
+                const response = await fetch(`${API_BASE}/dns/routes`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    await refreshDnsRoutes();
+                } else {
+                    showError(data.error || 'Failed to clear routes');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        async function removeDnsRoute(domain) {
+            try {
+                const response = await fetch(`${API_BASE}/dns/routes/${domain}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    await refreshDnsRoutes();
+                } else {
+                    showError(data.error || 'Failed to remove route');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        async function refreshDnsRoutes() {
+            try {
+                const response = await fetch(`${API_BASE}/dns/routes`);
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    const routes = data.routes || [];
+                    const routesList = document.getElementById('dns-routes-list');
+                    
+                    if (routes.length === 0) {
+                        routesList.innerHTML = '<p style="color: #999; text-align: center;">No DNS routes configured</p>';
+                    } else {
+                        routesList.innerHTML = '';
+                        routes.forEach(route => {
+                            const div = document.createElement('div');
+                            div.className = 'dns-route';
+                            div.innerHTML = `
+                                <div class="dns-route-info">
+                                    <strong>${route.domain}</strong>  <code>${route.ip}</code>
+                                </div>
+                                <div class="dns-route-actions">
+                                    <button class="danger" onclick="removeDnsRoute('${route.domain}')"> Remove</button>
+                                </div>
+                            `;
+                            routesList.appendChild(div);
+                        });
+                    }
+                    
+                    document.getElementById('dns-routes-count').textContent = routes.length;
+                }
+            } catch (error) {
+                console.error('Error refreshing DNS routes:', error);
+            }
+        }
+        
         // Refresh pages list
         async function refreshPages() {
             try {
@@ -774,10 +1007,10 @@ console.log('Hello from ProxyBox!');"></textarea>
         }
         
         // Switch tab
-        function switchTab(tabName) {
+        function switchTab(event, tabName) {
             // Hide all panes
             document.querySelectorAll('.view-pane').forEach(pane => {
-                pane.style.display = 'none';
+                pane.classList.remove('active');
             });
             
             // Remove active class from all tabs
@@ -786,10 +1019,12 @@ console.log('Hello from ProxyBox!');"></textarea>
             });
             
             // Show selected pane
-            document.getElementById(`${tabName}-view`).style.display = 'block';
+            document.getElementById(`${tabName}-view`).classList.add('active');
             
             // Add active class to selected tab
-            event.target.classList.add('active');
+            if (event) {
+                event.target.classList.add('active');
+            }
         }
         
         // Show success message
@@ -822,6 +1057,12 @@ console.log('Hello from ProxyBox!');"></textarea>
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.target.id === 'url-input') {
                 navigateToUrl();
+            }
+            if (e.key === 'Enter' && e.target.id === 'dns-domain') {
+                addDnsRoute();
+            }
+            if (e.key === 'Enter' && e.target.id === 'dns-ip') {
+                addDnsRoute();
             }
         });
         

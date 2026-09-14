@@ -7,6 +7,7 @@ Supports navigation, screenshot, DOM manipulation, and traffic interception
 from flask import Flask, request, jsonify, send_file, Response, render_template
 from flask_cors import CORS
 from playwright.sync_api import sync_playwright
+from dns_manager import dns_manager
 import os
 import time
 import threading
@@ -18,7 +19,8 @@ app = Flask(__name__)
 CORS(app)
 
 # Configure templates folder
-app.template_folder = '/app/templates'
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.template_folder = os.path.join(basedir, 'templates')
 
 # Global variables for browser state
 browser_instance = None
@@ -32,26 +34,27 @@ DNS_SERVER = os.environ.get("DNS_SERVER", "172.20.0.2")
 
 
 def initialize_browser():
-    """Initialize Playwright browser with proxy and DNS settings"""
+    """Initialize Playwright browser with proxy settings"""
     global browser_instance
     
     with lock:
         if browser_instance is None:
             try:
-                with sync_playwright() as p:
-                    browser_instance = p.chromium.launch(
-                        proxy={"server": PROXY_SERVER},
-                        headless=True,
-                        args=[
-                            f"--dns-servers={DNS_SERVER}",
-                            "--ignore-certificate-errors",
-                            "--allow-running-insecure-content",
-                            "--disable-gpu",
-                            "--no-sandbox",
-                            "--disable-dev-shm-usage"
-                        ]
-                    )
-                    print("Browser initialized successfully")
+                browser_instance = sync_playwright().start()
+                browser_instance = browser_instance.chromium.launch(
+                    proxy={"server": PROXY_SERVER} if PROXY_SERVER else None,
+                    headless=True,
+                    args=[
+                        "--ignore-certificate-errors",
+                        "--allow-running-insecure-content",
+                        "--disable-gpu",
+                        "--no-sandbox",
+                        "--disable-dev-shm-usage",
+                        "--disable-setuid-sandbox",
+                        "--single-process"
+                    ]
+                )
+                print("Browser initialized successfully")
             except Exception as e:
                 print(f"Error initializing browser: {e}")
                 browser_instance = None
@@ -62,7 +65,7 @@ def get_browser():
     if browser_instance is None:
         initialize_browser()
         # Wait for browser to initialize
-        time.sleep(2)
+        time.sleep(3)
     return browser_instance
 
 
@@ -425,6 +428,98 @@ def index():
 def dashboard():
     """Redirect to main dashboard"""
     return render_template('index.html')
+
+
+# DNS Management API Endpoints
+@app.route('/api/dns/routes', methods=['GET'])
+def list_dns_routes():
+    """List all custom DNS routes"""
+    try:
+        routes = dns_manager.list_routes()
+        return jsonify({
+            "status": "ok",
+            "routes": routes
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/dns/routes', methods=['POST'])
+def add_dns_route():
+    """Add a new DNS route and apply to mitmproxy"""
+    data = request.get_json()
+    domain = data.get('domain')
+    ip = data.get('ip')
+    
+    if not domain or not ip:
+        return jsonify({"error": "domain and ip are required"}), 400
+    
+    try:
+        success, message = dns_manager.add_route(domain, ip)
+        if success:
+            # Apply to mitmproxy
+            try:
+                from mitmproxy_script import add_dns_route as mitm_add_route
+                mitm_add_route(domain, ip)
+            except:
+                pass  # mitmproxy might not be running yet
+            
+            return jsonify({
+                "status": "ok",
+                "message": message,
+                "domain": domain,
+                "ip": ip
+            })
+        else:
+            return jsonify({"error": message}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/dns/routes/<domain>', methods=['DELETE'])
+def remove_dns_route(domain):
+    """Remove a DNS route"""
+    try:
+        success, message = dns_manager.remove_route(domain)
+        if success:
+            # Apply to mitmproxy
+            try:
+                from mitmproxy_script import remove_dns_route as mitm_remove_route
+                mitm_remove_route(domain)
+            except:
+                pass  # mitmproxy might not be running yet
+            
+            return jsonify({
+                "status": "ok",
+                "message": message
+            })
+        else:
+            return jsonify({"error": message}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/dns/routes', methods=['DELETE'])
+def clear_dns_routes():
+    """Clear all DNS routes"""
+    try:
+        success, message = dns_manager.clear_routes()
+        if success:
+            # Apply to mitmproxy
+            try:
+                from mitmproxy_script import clear_dns_routes as mitm_clear_routes
+                mitm_clear_routes()
+            except:
+                pass  # mitmproxy might not be running yet
+            
+            return jsonify({
+                "status": "ok",
+                "message": message
+            })
+        else:
+            return jsonify({"error": message}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == '__main__':
