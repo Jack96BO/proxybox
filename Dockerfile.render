@@ -41,7 +41,7 @@ COPY api/templates /app/templates
 # 5. Crea script di avvio per tutti i servizi
 RUN echo '#!/bin/sh' > /app/start.sh && \
     echo 'echo "Starting Mitmproxy in headless mode..."' >> /app/start.sh && \
-    echo 'mitmdump -s /app/mitmproxy_script.py --listen-port 8080 --no-http2 --ignore-ssl-errors &' >> /app/start.sh && \
+    echo 'mitmdump -s /app/mitmproxy_script.py --listen-port 8080 --no-http2 --ssl-insecure &' >> /app/start.sh && \
     echo 'echo "Waiting for Mitmproxy to start..."' >> /app/start.sh && \
     echo 'sleep 5' >> /app/start.sh && \
     echo 'echo "Starting Flask API..."' >> /app/start.sh && \
