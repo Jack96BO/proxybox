@@ -6,7 +6,6 @@ Mitmproxy script for traffic manipulation in API mode
 """
 
 from mitmproxy import http, ctx
-import json
 
 
 def request(flow: http.HTTPFlow) -> None:
@@ -48,8 +47,3 @@ def configure(updated: bool) -> None:
     # Enable SSL interception
     ctx.options.ssl_insecure = True
     ctx.log.info("[API] Mitmproxy configured for SSL interception")
-
-
-def tls_handshake(data: http.TLSHandshakeData) -> None:
-    """Handle TLS handshake for SNI-based routing"""
-    ctx.log.info(f"[API] TLS handshake with: {data.server_hostname}")
