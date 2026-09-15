@@ -39,14 +39,14 @@ USER_DATA_DIR = os.environ.get("USER_DATA_DIR", "/data/chromium")
 # Import Modules
 # ============================================================================
 # Browser Manager (Chromium + CDP + Playwright)
-from browser.manager import BrowserManager
+from api.browser.manager import BrowserManager
 
 # Network Manager (DNS + Proxy)
-from network.dns_manager import DNSManager
-from network.proxy_manager import ProxyManager
+from api.network.dns_manager import DNSManager
+from api.network.proxy_manager import ProxyManager
 
 # Mitmproxy Addon
-from mitmproxy.addon import MitmproxyAddon
+from api.mitmproxy.addon import MitmproxyAddon
 
 # ============================================================================
 # Initialize Components
