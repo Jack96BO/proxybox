@@ -61,6 +61,10 @@ echo "All services ready!"
 export PROXY_SERVER="$PROXY_SERVER"
 export CDP_PORT="$CDP_PORT"
 export MITMPROXY_PORT="$MITMPROXY_PORT"
+export PYTHONPATH="/app:$PYTHONPATH"
+
+# Change to the correct directory
+cd /app
 
 # Start Flask with Gunicorn
-exec gunicorn --bind 0.0.0.0:$FLASK_PORT --workers 1 --threads 1 --timeout 300 app:app
+exec gunicorn --bind 0.0.0.0:$FLASK_PORT --workers 1 --threads 1 --timeout 300 api.app:app

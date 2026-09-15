@@ -103,6 +103,7 @@ RUN chmod +x /app/scripts/*.sh
 # 1. Mitmproxy (porta 8080)
 # 2. Chromium standalone (porta 9222 CDP)
 # 3. Flask API (porta 5000)
+WORKDIR /app
 CMD ["/app/scripts/start.sh"]
 
 # ============================================================================
