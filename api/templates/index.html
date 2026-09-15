@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProxyBox - Web Dashboard</title>
+    <title>ProxyBox - Remote Browser Control</title>
     <style>
         * {
             margin: 0;
@@ -11,57 +11,96 @@
             box-sizing: border-box;
         }
         
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #4CAF50;
+            --danger: #f44336;
+            --warning: #FF9800;
+            --info: #2196F3;
+            --light: #f8f9fa;
+            --dark: #343a40;
+            --border: #dee2e6;
+        }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             min-height: 100vh;
-            color: #333;
+            color: var(--dark);
         }
         
         .container {
-            max-width: 1400px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
         }
         
         header {
             background: white;
-            padding: 20px 0;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px 0;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             margin-bottom: 30px;
-            border-radius: 10px;
+            border-radius: 15px;
         }
         
         h1 {
-            color: #667eea;
+            color: var(--primary);
             text-align: center;
-            font-size: 2.5em;
+            font-size: 2.8em;
             margin-bottom: 10px;
+            font-weight: 700;
         }
         
         .subtitle {
             text-align: center;
             color: #666;
-            font-size: 1.1em;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        
+        .arch-diagram {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            text-align: center;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+        }
+        
+        .arch-diagram pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            text-align: left;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .status-bar {
             background: white;
-            padding: 15px 20px;
+            padding: 20px;
             border-radius: 10px;
             margin-bottom: 20px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 15px;
         }
         
         .status-item {
             display: flex;
             align-items: center;
             gap: 10px;
+            padding: 10px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
         
         .status-dot {
@@ -71,76 +110,84 @@
             display: inline-block;
         }
         
-        .status-dot.online {
-            background: #4CAF50;
-            box-shadow: 0 0 5px #4CAF50;
-        }
+        .status-dot.online { background: var(--success); box-shadow: 0 0 5px var(--success); }
+        .status-dot.offline { background: var(--danger); box-shadow: 0 0 5px var(--danger); }
+        .status-dot.warning { background: var(--warning); box-shadow: 0 0 5px var(--warning); }
         
-        .status-dot.offline {
-            background: #f44336;
-            box-shadow: 0 0 5px #f44336;
-        }
-        
-        .status-dot.warning {
-            background: #FF9800;
-            box-shadow: 0 0 5px #FF9800;
+        .status-value {
+            font-weight: 600;
+            color: var(--dark);
         }
         
         .controls {
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 10px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .control-section {
+            margin-bottom: 25px;
+        }
+        
+        .control-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .section-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--border);
         }
         
         .control-group {
             margin-bottom: 15px;
         }
         
-        .control-group:last-child {
-            margin-bottom: 0;
-        }
-        
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-weight: 500;
-            color: #555;
+            color: var(--dark);
         }
         
         input[type="text"],
         input[type="url"],
+        input[type="number"],
         textarea,
         select {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
             font-size: 14px;
             font-family: inherit;
+            transition: border-color 0.3s ease;
         }
         
-        input[type="text"]:focus,
-        input[type="url"]:focus,
+        input:focus,
         textarea:focus,
         select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
         textarea {
-            min-height: 80px;
+            min-height: 100px;
             resize: vertical;
         }
         
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
             color: white;
             border: none;
             padding: 12px 24px;
-            border-radius: 5px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
             font-weight: 500;
@@ -163,6 +210,18 @@
             font-size: 16px;
         }
         
+        button.danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #c62828 100%);
+        }
+        
+        button.success {
+            background: linear-gradient(135deg, var(--success) 0%, #2E7D32 100%);
+        }
+        
+        button.info {
+            background: linear-gradient(135deg, var(--info) 0%, #1976D2 100%);
+        }
+        
         .button-group {
             display: flex;
             gap: 10px;
@@ -170,44 +229,52 @@
             margin-top: 10px;
         }
         
+        .form-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .form-row input,
+        .form-row select {
+            flex: 1;
+        }
+        
         .view-section {
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: 10px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         
         .view-tabs {
             display: flex;
             gap: 10px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #eee;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
             flex-wrap: wrap;
         }
         
         .tab {
-            padding: 10px 20px;
+            padding: 12px 24px;
             cursor: pointer;
             border: none;
             background: transparent;
             color: #666;
             font-size: 14px;
-            border-bottom: 2px solid transparent;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
             transition: all 0.3s ease;
+            margin-bottom: -1px;
         }
         
         .tab.active {
-            color: #667eea;
-            border-bottom-color: #667eea;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
         
         .tab:hover {
-            color: #667eea;
-        }
-        
-        .view-content {
-            padding: 10px 0;
+            color: var(--primary);
         }
         
         .view-pane {
@@ -216,6 +283,12 @@
         
         .view-pane.active {
             display: block;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         .screenshot-container {
@@ -226,7 +299,7 @@
         .screenshot-container img {
             max-width: 100%;
             border-radius: 8px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
             cursor: pointer;
             transition: transform 0.3s ease;
         }
@@ -236,48 +309,50 @@
         }
         
         .content-display {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 5px;
-            max-height: 500px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            max-height: 600px;
             overflow-y: auto;
             font-family: 'Courier New', monospace;
             font-size: 12px;
             white-space: pre-wrap;
             word-wrap: break-word;
             text-align: left;
+            border: 1px solid var(--border);
         }
         
         .pages-list {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
             gap: 15px;
         }
         
         .page-card {
             background: #f8f9fa;
-            padding: 15px;
+            padding: 20px;
             border-radius: 8px;
-            border: 1px solid #e9ecef;
+            border: 1px solid var(--border);
             cursor: pointer;
             transition: all 0.3s ease;
         }
         
         .page-card:hover {
             background: #e9ecef;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
         
         .page-card.active {
             background: #e3f2fd;
-            border-color: #667eea;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
         }
         
         .page-card h3 {
             font-size: 14px;
-            margin-bottom: 5px;
-            color: #333;
+            margin-bottom: 8px;
+            color: var(--dark);
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -291,6 +366,54 @@
             text-overflow: ellipsis;
         }
         
+        .page-card .meta {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .dns-routes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .dns-route {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        
+        .dns-route-info {
+            flex: 1;
+        }
+        
+        .dns-route-info strong {
+            color: var(--primary);
+            font-size: 14px;
+        }
+        
+        .dns-route-info code {
+            background: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            color: var(--dark);
+            border: 1px solid var(--border);
+        }
+        
+        .dns-route-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
         .stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -299,17 +422,17 @@
         }
         
         .stat-card {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 20px;
+            border-radius: 10px;
             text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border: 1px solid var(--border);
         }
         
         .stat-value {
-            font-size: 2em;
+            font-size: 2.5em;
             font-weight: bold;
-            color: #667eea;
+            color: var(--primary);
             margin-bottom: 5px;
         }
         
@@ -320,10 +443,40 @@
             letter-spacing: 1px;
         }
         
+        .message {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .message.success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #a5d6a7;
+        }
+        
+        .message.error {
+            background: #ffebee;
+            color: #c62828;
+            border: 1px solid #ef9a9a;
+        }
+        
+        .message.info {
+            background: #e3f2fd;
+            color: #1976d2;
+            border: 1px solid #90caf9;
+        }
+        
         .loading {
             text-align: center;
-            padding: 40px;
-            color: #666;
+            padding: 60px 20px;
+            color: #999;
         }
         
         .loading::after {
@@ -337,31 +490,27 @@
             60%, 100% { content: '...'; }
         }
         
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border: 1px solid #ef9a9a;
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
         }
         
-        .success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border: 1px solid #a5d6a7;
+        .empty-state i {
+            font-size: 48px;
+            display: block;
+            margin-bottom: 15px;
+            opacity: 0.5;
         }
         
         .browser-view {
             width: 100%;
             height: 600px;
-            border: 1px solid #ddd;
+            border: 2px solid var(--border);
             border-radius: 8px;
             background: white;
             overflow: hidden;
+            position: relative;
         }
         
         .browser-view iframe {
@@ -370,50 +519,25 @@
             border: none;
         }
         
-        .dns-section {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        
-        .dns-route {
+        .browser-view .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.95);
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
+            justify-content: center;
+            flex-direction: column;
+            gap: 15px;
+            color: #666;
+            z-index: 10;
         }
         
-        .dns-route:last-child {
-            border-bottom: none;
-        }
-        
-        .dns-route-info {
-            flex: 1;
-        }
-        
-        .dns-route-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        button.danger {
-            background: linear-gradient(135deg, #f44336 0%, #c62828 100%);
-        }
-        
-        button.success {
-            background: linear-gradient(135deg, #4CAF50 0%, #2E7D32 100%);
-        }
-        
-        .form-row {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .form-row input {
-            flex: 1;
+        .browser-view .overlay i {
+            font-size: 48px;
+            color: var(--primary);
         }
         
         @media (max-width: 768px) {
@@ -428,7 +552,11 @@
             .status-bar {
                 flex-direction: column;
                 gap: 10px;
-                text-align: center;
+            }
+            
+            .status-item {
+                width: 100%;
+                justify-content: center;
             }
             
             .button-group {
@@ -442,101 +570,162 @@
             .form-row {
                 flex-direction: column;
             }
+            
+            .pages-list {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
 <body>
     <header>
         <div class="container">
-            <h1>\ud83c\udf10 ProxyBox Dashboard</h1>
-            <p class="subtitle">Browser Automation & Traffic Interception with Custom DNS Routing</p>
+            <h1>\ud83c\udf10 ProxyBox</h1>
+            <p class="subtitle">Remote Browser Control via Chrome DevTools Protocol (CDP)</p>
+            
+            <div class="arch-diagram">
+                <pre>
+  ┌─────────────────────────────────────────────────────────────┐
+  │                        ARCHITETTURA                            │
+  ├─────────────────────────────────────────────────────────────┤
+  │                                                             │
+  │  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐   │
+  │  │   WPF/Agent  │───▶│    API      │───▶│  Chromium   │   │
+  │  │   (Locale)   │    │  :5000      │    │   :9222     │   │
+  │  └──────────────┘    └──────┬───────┘    │  (Standalone)│   │
+  │                          │              │    (CDP)      │   │
+  │                          ▼              └──────┬───────┘   │
+  │                   ┌──────────────────┐         │            │
+  │                   │   Mitmproxy      │◀────────┘            │
+  │                   │   :8080          │                         │
+  │                   └──────────────────┘                         │
+  │                           │                                  │
+  │                           ▼                                  │
+  │                     INTERNET                                  │
+  └─────────────────────────────────────────────────────────────┘
+                </pre>
+            </div>
         </div>
     </header>
     
     <div class="container">
+        <!-- Status Bar -->
         <div class="status-bar">
             <div class="status-item">
-                <span class="status-dot online"></span>
-                <span><strong>API Status:</strong> <span id="api-status">Loading...</span></span>
+                <span class="status-dot" id="api-status-dot"></span>
+                <span><strong>API:</strong> <span id="api-status">Loading...</span></span>
             </div>
             <div class="status-item">
                 <span class="status-dot" id="browser-status-dot"></span>
                 <span><strong>Browser:</strong> <span id="browser-status">Loading...</span></span>
             </div>
             <div class="status-item">
-                <span><strong>Pages:</strong> <span id="pages-count">0</span></span>
+                <span class="status-dot" id="proxy-status-dot"></span>
+                <span><strong>Proxy:</strong> <span id="proxy-status">Loading...</span></span>
             </div>
             <div class="status-item">
-                <span><strong>Proxy:</strong> <span id="proxy-status">http://localhost:8080</span></span>
+                <span><strong>Pages:</strong> <span id="pages-count">0</span></span>
             </div>
             <div class="status-item">
                 <span><strong>DNS Routes:</strong> <span id="dns-routes-count">0</span></span>
             </div>
         </div>
         
+        <!-- Browser Control -->
         <div class="controls">
-            <div class="control-group">
-                <label for="url-input">URL:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="url" id="url-input" placeholder="https://example.com" value="https://google.com">
-                    <button onclick="navigateToUrl()"><i>\ud83d\udd0d</i> Go</button>
-                    <button onclick="reloadPage()"><i>\ud83d\udd04</i> Reload</button>
+            <div class="control-section">
+                <h2 class="section-title">\ud83d\udda5 Browser Control</h2>
+                
+                <div class="control-group">
+                    <label for="url-input">URL:</label>
+                    <div class="form-row">
+                        <input type="url" id="url-input" placeholder="https://example.com" value="https://google.com">
+                        <button onclick="navigateToUrl()"><i>\ud83d\udd0d</i> Go</button>
+                        <button onclick="reloadPage()" class="info"><i>\ud83d\udd04</i> Reload</button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="control-group">
-                <div class="button-group">
-                    <button onclick="createNewPage()"><i>\ud83d\udcc4</i> New Page</button>
-                    <button onclick="takeScreenshot()"><i>\ud83d\udcf7</i> Screenshot</button>
-                    <button onclick="getHtmlContent()"><i>\ud83d\udcc4</i> HTML</button>
-                    <button onclick="getTextContent()"><i>\ud83d\udcdd</i> Text</button>
-                    <button onclick="executeJs()"><i>\u26a1</i> Run JS</button>
+                
+                <div class="control-group">
+                    <div class="button-group">
+                        <button onclick="createNewPage()"><i>\ud83d\udcc4</i> New Page</button>
+                        <button onclick="takeScreenshot()" class="success"><i>\ud83d\udcf7</i> Screenshot</button>
+                        <button onclick="getHtmlContent()" class="info"><i>\ud83d\udcc4</i> HTML</button>
+                        <button onclick="getTextContent()" class="info"><i>\ud83d\udcdd</i> Text</button>
+                        <button onclick="executeJs()" class="success"><i>\u26a1</i> Run JS</button>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="control-group">
-                <label for="js-code">JavaScript Code:</label>
-                <textarea id="js-code" placeholder="// Enter JavaScript code here
-console.log('Hello from ProxyBox!');"></textarea>
-            </div>
-            
-            <div class="control-group">
-                <label for="selector">CSS Selector:</label>
-                <div style="display: flex; gap: 10px;">
-                    <input type="text" id="selector" placeholder="input, button, a">
-                    <input type="text" id="fill-value" placeholder="Value">
-                    <button onclick="clickElement()"><i>\ud83d\uddb1\ufe0f</i> Click</button>
-                    <button onclick="fillForm()"><i>\u270f\ufe0f</i> Fill</button>
+                
+                <div class="control-group">
+                    <label for="js-code">JavaScript Code:</label>
+                    <textarea id="js-code" placeholder="// Enter JavaScript code here
+console.log('Hello from ProxyBox!');
+return document.title;"></textarea>
                 </div>
-            </div>
-        </div>
-        
-        <!-- DNS Management Section -->
-        <div class="dns-section">
-            <h2 style="margin-bottom: 15px; color: #667eea;">\ud83c\udf10 DNS Routing</h2>
-            <p style="margin-bottom: 15px; color: #666;">Add custom DNS routes to redirect domains to specific IPs</p>
-            
-            <div class="control-group">
-                <label>Add New Route:</label>
-                <div class="form-row">
-                    <input type="text" id="dns-domain" placeholder="example.com">
-                    <input type="text" id="dns-ip" placeholder="10.58.54.2">
-                    <button class="success" onclick="addDnsRoute()"><i>+</i> Add Route</button>
-                </div>
-            </div>
-            
-            <div class="control-group">
-                <button class="danger" onclick="clearDnsRoutes()"><i>\ud83d\uddd1</i> Clear All Routes</button>
-            </div>
-            
-            <div class="control-group">
-                <label>Current Routes:</label>
-                <div id="dns-routes-list" style="max-height: 200px; overflow-y: auto; border: 1px solid #eee; border-radius: 5px; padding: 10px; background: #f9f9f9;">
-                    <p style="color: #999; text-align: center;">No DNS routes configured</p>
+                
+                <div class="control-group">
+                    <label for="selector">CSS Selector:</label>
+                    <div class="form-row">
+                        <input type="text" id="selector" placeholder="input[name='q'], button">
+                        <input type="text" id="fill-value" placeholder="Search term">
+                        <button onclick="clickElement()" class="success"><i>\ud83d\uddb1\ufe0f</i> Click</button>
+                        <button onclick="fillForm()" class="info"><i>\u270f\ufe0f</i> Fill</button>
+                    </div>
                 </div>
             </div>
         </div>
         
+        <!-- DNS Management -->
+        <div class="controls">
+            <div class="control-section">
+                <h2 class="section-title">\ud83c\udf10 DNS Routing</h2>
+                <p style="margin-bottom: 15px; color: #666;">Add custom DNS routes to redirect domains to specific IPs</p>
+                
+                <div class="control-group">
+                    <label>Add New Route:</label>
+                    <div class="form-row">
+                        <input type="text" id="dns-domain" placeholder="example.com">
+                        <input type="text" id="dns-ip" placeholder="10.58.54.2">
+                        <button onclick="addDnsRoute()" class="success"><i>+</i> Add Route</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="clearDnsRoutes()" class="danger"><i>\ud83d\uddd1</i> Clear All Routes</button>
+                </div>
+                
+                <div class="control-group">
+                    <label>Current Routes:</label>
+                    <div id="dns-routes-list" class="dns-routes-list">
+                        <div class="empty-state">
+                            <i>\ud83d\udccd</i>
+                            <span>No DNS routes configured</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Proxy Management -->
+        <div class="controls">
+            <div class="control-section">
+                <h2 class="section-title">\ud83d\udc80 Proxy Control</h2>
+                
+                <div class="control-group">
+                    <div class="button-group">
+                        <button onclick="startProxy()" class="success"><i>\u25b6</i> Start Proxy</button>
+                        <button onclick="stopProxy()" class="danger"><i>\u23f9</i> Stop Proxy</button>
+                        <button onclick="restartProxy()" class="info"><i>\ud83d\udd04</i> Restart Proxy</button>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label>Proxy URL:</label>
+                    <input type="text" id="proxy-url" readonly value="http://localhost:8080">
+                </div>
+            </div>
+        </div>
+        
+        <!-- View Section -->
         <div class="view-section">
             <div class="view-tabs">
                 <button class="tab active" onclick="switchTab(event, 'browser')">\ud83d\udda5 Browser View</button>
@@ -547,13 +736,18 @@ console.log('Hello from ProxyBox!');"></textarea>
             </div>
             
             <div class="view-content">
+                <!-- Browser View -->
                 <div id="browser-view" class="view-pane active">
-                    <div style="padding: 20px; text-align: center; color: #999;">
-                        <p>Browser view will appear here when a page is created and navigated.</p>
-                        <p>Use the controls above to navigate to a URL.</p>
+                    <div class="browser-view">
+                        <div class="overlay" id="browser-overlay">
+                            <i>\ud83d\udda5</i>
+                            <span>Browser view will appear here</span>
+                            <span style="font-size: 12px; color: #999;">Create a page and navigate to a URL</span>
+                        </div>
                     </div>
                 </div>
                 
+                <!-- Screenshot View -->
                 <div id="screenshot-view" class="view-pane">
                     <div class="screenshot-container">
                         <img id="screenshot-img" style="display: none;" alt="Screenshot">
@@ -561,37 +755,54 @@ console.log('Hello from ProxyBox!');"></textarea>
                     </div>
                 </div>
                 
+                <!-- HTML View -->
                 <div id="html-view" class="view-pane">
                     <div class="content-display" id="html-content"></div>
                 </div>
                 
+                <!-- Text View -->
                 <div id="text-view" class="view-pane">
                     <div class="content-display" id="text-content"></div>
                 </div>
                 
+                <!-- Pages View -->
                 <div id="pages-view" class="view-pane">
-                    <div class="pages-list" id="pages-list"></div>
+                    <div class="pages-list" id="pages-list">
+                        <div class="empty-state">
+                            <i>\ud83d\udcc4</i>
+                            <span>No pages open</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-value" id="stat-requests">0</div>
-                <div class="stat-label">Requests</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-pages">0</div>
-                <div class="stat-label">Pages</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-value" id="stat-uptime">0s</div>
-                <div class="stat-label">Uptime</div>
+        <!-- Stats -->
+        <div class="view-section">
+            <h2 class="section-title">\ud83d\udcca Statistics</h2>
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-requests">0</div>
+                    <div class="stat-label">Requests</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-pages">0</div>
+                    <div class="stat-label">Pages</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-contexts">0</div>
+                    <div class="stat-label">Contexts</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="stat-uptime">0s</div>
+                    <div class="stat-label">Uptime</div>
+                </div>
             </div>
         </div>
     </div>
     
     <script>
+        // Global state
         let currentPageId = null;
         let pages = [];
         let startTime = new Date();
@@ -599,59 +810,85 @@ console.log('Hello from ProxyBox!');"></textarea>
         // API Base URL
         const API_BASE = window.location.origin + '/api';
         
-        // Initialize
+        // ========================================================================
+        // INITIALIZATION
+        // ========================================================================
+        
         async function init() {
             await checkHealth();
             await refreshPages();
             await refreshDnsRoutes();
             updateUptime();
             setInterval(updateUptime, 1000);
-            setInterval(refreshDnsRoutes, 5000);
+            setInterval(refreshStatus, 10000);
         }
         
-        // Check API health
         async function checkHealth() {
             try {
                 const response = await fetch(`${API_BASE}/health`);
                 const data = await response.json();
                 
+                // Update status dots
+                document.getElementById('api-status-dot').className = 'status-dot online';
                 document.getElementById('api-status').textContent = 'Online';
-                document.getElementById('api-status').style.color = '#4CAF50';
                 
                 if (data.browser) {
-                    document.getElementById('browser-status').textContent = 'Running';
                     document.getElementById('browser-status-dot').className = 'status-dot online';
+                    document.getElementById('browser-status').textContent = 'Running';
                 } else {
-                    document.getElementById('browser-status').textContent = 'Stopped';
                     document.getElementById('browser-status-dot').className = 'status-dot offline';
+                    document.getElementById('browser-status').textContent = 'Stopped';
                 }
                 
-                document.getElementById('pages-count').textContent = data.pages || 0;
-                document.getElementById('stat-pages').textContent = data.pages || 0;
+                if (data.proxy) {
+                    document.getElementById('proxy-status-dot').className = 'status-dot online';
+                    document.getElementById('proxy-status').textContent = 'Running';
+                } else {
+                    document.getElementById('proxy-status-dot').className = 'status-dot offline';
+                    document.getElementById('proxy-status').textContent = 'Stopped';
+                }
+                
+                document.getElementById('pages-count').textContent = data.browser_stats?.pages || 0;
+                document.getElementById('stat-pages').textContent = data.browser_stats?.pages || 0;
+                document.getElementById('stat-contexts').textContent = data.browser_stats?.contexts || 0;
+                document.getElementById('dns-routes-count').textContent = data.dns_routes_count || 0;
+                
             } catch (error) {
+                document.getElementById('api-status-dot').className = 'status-dot offline';
                 document.getElementById('api-status').textContent = 'Offline';
-                document.getElementById('api-status').style.color = '#f44336';
                 document.getElementById('browser-status').textContent = 'Error';
-                document.getElementById('browser-status-dot').className = 'status-dot offline';
+                document.getElementById('proxy-status').textContent = 'Error';
             }
         }
         
-        // Update uptime
+        async function refreshStatus() {
+            await checkHealth();
+            await refreshPages();
+            await refreshDnsRoutes();
+        }
+        
         function updateUptime() {
             const uptime = Math.floor((new Date() - startTime) / 1000);
             document.getElementById('stat-uptime').textContent = `${uptime}s`;
         }
         
-        // Create new page
+        // ========================================================================
+        // BROWSER CONTROL
+        // ========================================================================
+        
         async function createNewPage() {
             try {
-                const response = await fetch(`${API_BASE}/page/create`, { method: 'POST' });
+                const response = await fetch(`${API_BASE}/page/create`, { 
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
                 const data = await response.json();
                 
                 if (data.status === 'ok') {
                     currentPageId = data.page_id;
                     await refreshPages();
                     showSuccess('New page created!');
+                    incrementStat('pages');
                 } else {
                     showError(data.error || 'Failed to create page');
                 }
@@ -660,7 +897,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Navigate to URL
         async function navigateToUrl() {
             const url = document.getElementById('url-input').value;
             if (!url) return showError('Please enter a URL');
@@ -673,7 +909,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                 const response = await fetch(`${API_BASE}/page/${currentPageId}/navigate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url })
+                    body: JSON.stringify({ url, wait_until: 'domcontentloaded' })
                 });
                 const data = await response.json();
                 
@@ -682,9 +918,9 @@ console.log('Hello from ProxyBox!');"></textarea>
                     showSuccess(`Navigated to ${data.title || url}`);
                     await refreshPages();
                     
-                    // Show browser view
-                    switchTab(event, 'browser');
-                    updateBrowserView();
+                    // Update browser view
+                    updateBrowserView(url);
+                    incrementStat('requests');
                 } else {
                     showError(data.error || 'Navigation failed');
                 }
@@ -693,20 +929,21 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Update browser view
-        function updateBrowserView() {
-            if (!currentPageId) return;
-            
+        function updateBrowserView(url) {
             const browserView = document.getElementById('browser-view');
-            const url = document.getElementById('url-input').value;
+            const overlay = document.getElementById('browser-overlay');
             
-            // Create an iframe to display the page through the proxy
-            browserView.innerHTML = `
-                <iframe src="${url}" style="width: 100%; height: 600px; border: none; border-radius: 8px;"></iframe>
-            `;
+            if (url) {
+                // Create iframe with proxy URL
+                browserView.innerHTML = `
+                    <iframe src="${url}" style="width: 100%; height: 100%; border: none;"></iframe>
+                `;
+                overlay.style.display = 'none';
+            } else {
+                overlay.style.display = 'flex';
+            }
         }
         
-        // Reload page
         async function reloadPage() {
             if (!currentPageId) return showError('No page selected');
             
@@ -716,7 +953,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                 
                 if (data.status === 'ok') {
                     showSuccess('Page reloaded!');
-                    updateBrowserView();
+                    incrementStat('requests');
                 } else {
                     showError(data.error || 'Reload failed');
                 }
@@ -725,7 +962,10 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Take screenshot
+        // ========================================================================
+        // CONTENT OPERATIONS
+        // ========================================================================
+        
         async function takeScreenshot() {
             if (!currentPageId) return showError('No page selected');
             
@@ -752,7 +992,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Get HTML content
         async function getHtmlContent() {
             if (!currentPageId) return showError('No page selected');
             
@@ -773,7 +1012,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Get text content
         async function getTextContent() {
             if (!currentPageId) return showError('No page selected');
             
@@ -794,7 +1032,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Execute JavaScript
         async function executeJs() {
             const script = document.getElementById('js-code').value;
             if (!script) return showError('Please enter JavaScript code');
@@ -819,7 +1056,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Click element
         async function clickElement() {
             const selector = document.getElementById('selector').value;
             if (!selector) return showError('Please enter a CSS selector');
@@ -844,7 +1080,6 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Fill form
         async function fillForm() {
             const selector = document.getElementById('selector').value;
             const value = document.getElementById('fill-value').value;
@@ -870,7 +1105,10 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // DNS Management Functions
+        // ========================================================================
+        // DNS MANAGEMENT
+        // ========================================================================
+        
         async function addDnsRoute() {
             const domain = document.getElementById('dns-domain').value;
             const ip = document.getElementById('dns-ip').value;
@@ -944,7 +1182,12 @@ console.log('Hello from ProxyBox!');"></textarea>
                     const routesList = document.getElementById('dns-routes-list');
                     
                     if (routes.length === 0) {
-                        routesList.innerHTML = '<p style="color: #999; text-align: center;">No DNS routes configured</p>';
+                        routesList.innerHTML = `
+                            <div class="empty-state">
+                                <i>\ud83d\udccd</i>
+                                <span>No DNS routes configured</span>
+                            </div>
+                        `;
                     } else {
                         routesList.innerHTML = '';
                         routes.forEach(route => {
@@ -955,7 +1198,7 @@ console.log('Hello from ProxyBox!');"></textarea>
                                     <strong>${route.domain}</strong>  <code>${route.ip}</code>
                                 </div>
                                 <div class="dns-route-actions">
-                                    <button class="danger" onclick="removeDnsRoute('${route.domain}')"> Remove</button>
+                                    <button onclick="removeDnsRoute('${route.domain}')" class="danger"> Remove</button>
                                 </div>
                             `;
                             routesList.appendChild(div);
@@ -969,7 +1212,62 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Refresh pages list
+        // ========================================================================
+        // PROXY MANAGEMENT
+        // ========================================================================
+        
+        async function startProxy() {
+            try {
+                const response = await fetch(`${API_BASE}/proxy/start`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    await checkHealth();
+                } else {
+                    showError(data.error || 'Failed to start proxy');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        async function stopProxy() {
+            try {
+                const response = await fetch(`${API_BASE}/proxy/stop`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    await checkHealth();
+                } else {
+                    showError(data.error || 'Failed to stop proxy');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        async function restartProxy() {
+            try {
+                const response = await fetch(`${API_BASE}/proxy/restart`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (data.status === 'ok') {
+                    showSuccess(data.message);
+                    await checkHealth();
+                } else {
+                    showError(data.error || 'Failed to restart proxy');
+                }
+            } catch (error) {
+                showError('Error: ' + error.message);
+            }
+        }
+        
+        // ========================================================================
+        // PAGE MANAGEMENT
+        // ========================================================================
+        
         async function refreshPages() {
             try {
                 const response = await fetch(`${API_BASE}/pages/list`);
@@ -978,18 +1276,31 @@ console.log('Hello from ProxyBox!');"></textarea>
                 if (data.status === 'ok') {
                     pages = data.pages || [];
                     const pagesList = document.getElementById('pages-list');
-                    pagesList.innerHTML = '';
                     
-                    pages.forEach(page => {
-                        const card = document.createElement('div');
-                        card.className = `page-card ${currentPageId === page.page_id ? 'active' : ''}`;
-                        card.onclick = () => selectPage(page.page_id);
-                        card.innerHTML = `
-                            <h3>${page.title || 'Untitled'}</h3>
-                            <p>${page.url || 'No URL'}</p>
+                    if (pages.length === 0) {
+                        pagesList.innerHTML = `
+                            <div class="empty-state">
+                                <i>\ud83d\udcc4</i>
+                                <span>No pages open</span>
+                            </div>
                         `;
-                        pagesList.appendChild(card);
-                    });
+                    } else {
+                        pagesList.innerHTML = '';
+                        pages.forEach(page => {
+                            const card = document.createElement('div');
+                            card.className = `page-card ${currentPageId === page.page_id ? 'active' : ''}`;
+                            card.onclick = () => selectPage(page.page_id);
+                            card.innerHTML = `
+                                <h3>${page.title || 'Untitled'}</h3>
+                                <p>${page.url || 'No URL'}</p>
+                                <div class="meta">
+                                    <span>ID: ${page.page_id}</span>
+                                    <span>Context: ${page.context_id || 'default'}</span>
+                                </div>
+                            `;
+                            pagesList.appendChild(card);
+                        });
+                    }
                     
                     document.getElementById('pages-count').textContent = pages.length;
                     document.getElementById('stat-pages').textContent = pages.length;
@@ -999,14 +1310,16 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Select a page
         function selectPage(pageId) {
             currentPageId = pageId;
             refreshPages();
             showSuccess(`Selected page ${pageId}`);
         }
         
-        // Switch tab
+        // ========================================================================
+        // TAB SWITCHING
+        // ========================================================================
+        
         function switchTab(event, tabName) {
             // Hide all panes
             document.querySelectorAll('.view-pane').forEach(pane => {
@@ -1027,33 +1340,45 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         }
         
-        // Show success message
-        function showSuccess(message) {
+        // ========================================================================
+        // MESSAGE DISPLAY
+        // ========================================================================
+        
+        function showMessage(message, type = 'info') {
             const div = document.createElement('div');
-            div.className = 'success';
+            div.className = `message ${type}`;
             div.textContent = message;
-            document.querySelector('.controls').prepend(div);
-            setTimeout(() => div.remove(), 3000);
+            
+            const container = document.querySelector('.controls') || document.body;
+            container.prepend(div);
+            
+            setTimeout(() => {
+                div.style.opacity = '0';
+                setTimeout(() => div.remove(), 300);
+            }, 3000);
+            
+            return div;
+        }
+        
+        function showSuccess(message) {
+            showMessage(message, 'success');
             incrementStat('requests');
         }
         
-        // Show error message
         function showError(message) {
-            const div = document.createElement('div');
-            div.className = 'error';
-            div.textContent = message;
-            document.querySelector('.controls').prepend(div);
-            setTimeout(() => div.remove(), 5000);
+            showMessage(message, 'error');
         }
         
-        // Increment stat
         function incrementStat(statName) {
             const element = document.getElementById(`stat-${statName}`);
             const current = parseInt(element.textContent) || 0;
             element.textContent = current + 1;
         }
         
-        // Keyboard shortcuts
+        // ========================================================================
+        // KEYBOARD SHORTCUTS
+        // ========================================================================
+        
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && e.target.id === 'url-input') {
                 navigateToUrl();
@@ -1066,7 +1391,10 @@ console.log('Hello from ProxyBox!');"></textarea>
             }
         });
         
-        // Initialize on page load
+        // ========================================================================
+        // INITIALIZE
+        // ========================================================================
+        
         window.addEventListener('load', init);
     </script>
 </body>

@@ -1,286 +1,360 @@
-# ProxyBox - Browser Automation & Traffic Interception
+# ProxyBox - Remote Browser with Traffic Interception
 
-ProxyBox is a complete solution for browser automation, traffic interception, and DNS routing in a Docker container. It combines Playwright for browser automation with Mitmproxy for traffic manipulation, providing a powerful API and web dashboard.
+**Architecture: Chromium Standalone + CDP + Playwright + Mitmproxy**
 
-## Features
+ProxyBox is a Docker-based remote browser system that allows you to control a Chromium browser instance through Chrome DevTools Protocol (CDP) and intercept/modify HTTP/HTTPS traffic using Mitmproxy. Designed for integration with WPF applications or any remote client.
 
-- **Browser Automation**: Full control over Chromium browser via Playwright
-- **Traffic Interception**: Modify HTTP/HTTPS requests and responses with Mitmproxy
-- **DNS Routing**: Custom DNS routes to redirect domains to specific IPs
-- **Web Dashboard**: Interactive HTML dashboard for easy control
-- **REST API**: Complete API for programmatic control
-- **Docker Ready**: Optimized for deployment on Render.com and other platforms
+## 🎯 Features
 
-## Architecture
+- **Chromium Standalone**: Browser runs as an independent process inside Docker
+- **CDP Control**: Full browser automation via Chrome DevTools Protocol
+- **Persistent Sessions**: User data directory survives container restarts
+- **Traffic Interception**: Mitmproxy for HTTP/HTTPS request/response manipulation
+- **Custom DNS Routing**: Dynamic DNS routes (e.g., `ilmiosito.com` → `10.58.54.2`)
+- **Web Dashboard**: HTML-based browser control interface
+- **WPF Integration**: Connect from WPF applications via REST API
+- **No Local Chromium**: Browser binaries are inside Docker, not on local machine
+
+## 🏗️ Architecture
 
 ```
-+------------------+
-|   Web Dashboard  |  (HTML/JS)
-+------------------+
-         |
-         v
-+------------------+
-|    Flask API     |  (Python)
-+------------------+
-         |
-    +----+----+
-    |         |
-+---v---+ +--v--+
-|Playwright|Mitmproxy|
-+---+---+ +--+--+
-    |         |
-    v         v
-+------------------+
-|   Chromium Browser with Proxy |
-+------------------+
+┌─────────────────────────────────────────────────────────────┐
+│                        PROXYBOX (Docker)                      │
+├─────────────────────────────────────────────────────────────┤
+│                                                             │
+│   CONTROL PLANE                    BROWSER LAYER              │
+│   ─────────────                    ────────────              │
+│      Flask API :5000 ────────────▶ Chromium :9222 (CDP)     │
+│          │                              │                         │
+│          │ CDP Connection                │                         │
+│          ▼                              ▼                         │
+│   BrowserManager ─────────────────▶ Playwright                │
+│          │                              │                         │
+│   NETWORK LAYER:                 │                         │
+│   ─────────────                  │                         │
+│      DNS Manager ─────────────────┘                         │
+│          │                                              │
+│          ▼                                              │
+│      Mitmproxy :8080 ──────────────────────────────▶ INTERNET│
+│                                                             │
+└─────────────────────────────────────────────────────────────┘
+         ▲
+         │ HTTPS
+         │
+    WPF Client (Locale)
 ```
 
-## Quick Start
+### Component Responsibilities
 
-### 1. Clone the Repository
+- **BrowserManager**: Manages Chromium process lifecycle, page creation, navigation, content operations
+- **ProxyManager**: Manages Mitmproxy process lifecycle
+- **DNSManager**: Manages DNS routes (in-memory), integrates with Mitmproxy addon
+- **MitmproxyAddon**: Handles traffic interception, DNS routing application, logging
+- **Flask API**: Control plane that coordinates all components
+
+## 📁 Project Structure
+
+```
+proxybox/
+├── Dockerfile.render          # Docker configuration for Render.com
+├── docker-compose.yml         # Local development configuration
+├── .env.example               # Environment variables template
+├── README.md                  # This file
+│
+├── api/
+│   ├── app.py                 # Flask API - Control Plane
+│   ├── browser/
+│   │   ├── __init__.py
+│   │   ├── chromium.py         # Chromium process management
+│   │   └── manager.py         # Browser session management
+│   ├── network/
+│   │   ├── __init__.py
+│   │   ├── dns_manager.py     # DNS route management
+│   │   └── proxy_manager.py   # Mitmproxy process management
+│   ├── mitmproxy/
+│   │   ├── __init__.py
+│   │   └── addon.py           # Mitmproxy traffic handler
+│   └── templates/
+│       └── index.html         # Web dashboard
+│
+├── scripts/
+│   ├── start.sh               # Main startup orchestrator
+│   └── start-chromium.sh      # Chromium startup script
+│
+└── data/
+    └── chromium/               # Persistent browser data (volume)
+```
+
+## 🚀 Quick Start
+
+### 1. Clone and Configure
 
 ```bash
 git clone https://github.com/Jack96BO/proxybox.git
 cd proxybox
+
+# Copy environment variables
+cp .env.example .env
+
+# Edit .env with your configuration
+nano .env
 ```
 
-### 2. Run with Docker Compose (Development)
+### 2. Build and Run with Docker Compose (Development)
 
 ```bash
+# Build the image
+docker-compose build
+
+# Start all services
 docker-compose up -d
+
+# View logs
+docker-compose logs -f
 ```
 
-This starts:
-- Flask API on port 5000
-- Mitmproxy on port 8080
-- dnsmasq on port 53 (optional)
+### 3. Access Services
 
-### 3. Deploy to Render.com
+- **Web Dashboard**: http://localhost:5000
+- **Flask API**: http://localhost:5000/api/
+- **Mitmproxy**: http://localhost:8080
+- **Chromium CDP**: http://localhost:9222 (internal only)
 
-1. Create a new Web Service on Render
-2. Select "Docker" as the runtime
-3. Use `Dockerfile.render` as the Dockerfile path
-4. Set environment variables (see below)
-5. Deploy!
-
-## Environment Variables
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `PROXY_SERVER` | Proxy server URL for Playwright | `http://localhost:8080` |
-| `DNS_SERVER` | DNS server IP | `127.0.0.1` |
-| `FLASK_HOST` | Flask server host | `0.0.0.0` |
-| `FLASK_PORT` | Flask server port | `5000` |
-| `MITMPROXY_PORT` | Mitmproxy port | `8080` |
-| `DNSMASQ_PORT` | Dnsmasq port | `53` |
-
-## API Endpoints
+## 📡 API Endpoints
 
 ### Browser Control
 
-- `POST /api/browser/start` - Start browser
-- `POST /api/browser/stop` - Stop browser
-- `GET /api/health` - Health check
-
-### Page Management
-
-- `POST /api/page/create` - Create new page
-- `POST /api/page/<id>/close` - Close page
-- `POST /api/page/<id>/navigate` - Navigate to URL
-- `POST /api/page/<id>/screenshot` - Take screenshot
-- `GET /api/page/<id>/content` - Get HTML content
-- `GET /api/page/<id>/text` - Get text content
-- `POST /api/page/<id>/execute` - Execute JavaScript
-- `POST /api/page/<id>/click` - Click element
-- `POST /api/page/<id>/fill` - Fill form
-- `GET /api/pages/list` - List all pages
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/browser/status` | Get browser status |
+| POST | `/api/browser/start` | Start browser |
+| POST | `/api/browser/stop` | Stop browser |
+| POST | `/api/browser/restart` | Restart browser |
+| POST | `/api/browser/page` | Create new page |
+| GET | `/api/browser/pages` | List all pages |
+| POST | `/api/browser/navigate` | Navigate to URL |
+| POST | `/api/browser/screenshot` | Take screenshot |
+| POST | `/api/browser/html` | Get page HTML |
+| POST | `/api/browser/text` | Get page text |
+| POST | `/api/browser/js` | Execute JavaScript |
+| POST | `/api/browser/click` | Click element |
+| POST | `/api/browser/fill` | Fill form field |
 
 ### DNS Routing
 
-- `GET /api/dns/routes` - List all DNS routes
-- `POST /api/dns/routes` - Add new DNS route
-- `DELETE /api/dns/routes/<domain>` - Remove DNS route
-- `DELETE /api/dns/routes` - Clear all DNS routes
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/dns/routes` | List all DNS routes |
+| POST | `/api/dns/routes` | Add new DNS route |
+| DELETE | `/api/dns/routes/<domain>` | Remove DNS route |
+| DELETE | `/api/dns/routes` | Clear all routes |
 
-### Element Interaction
+### Proxy Control
 
-- `POST /api/page/<id>/reload` - Reload page
-- `POST /api/page/<id>/back` - Go back
-- `POST /api/page/<id>/forward` - Go forward
-- `GET /api/page/<id>/title` - Get page title
-- `GET /api/page/<id>/url` - Get current URL
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/proxy/status` | Get proxy status |
+| POST | `/api/proxy/start` | Start proxy |
+| POST | `/api/proxy/stop` | Stop proxy |
+| POST | `/api/proxy/restart` | Restart proxy |
 
-## Web Dashboard
+### Traffic Statistics
 
-Access the dashboard at `http://localhost:5000` (or your deployed URL)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/stats` | Get traffic statistics |
+| POST | `/api/stats/reset` | Reset statistics |
 
-### Features:
+## 🔧 Configuration
 
-- **Browser View**: Embedded browser view via iframe
-- **Screenshot**: Capture screenshots of pages
-- **HTML/Text View**: View page content
-- **JavaScript Execution**: Run custom scripts on pages
-- **Element Interaction**: Click and fill form elements
-- **DNS Management**: Add/remove DNS routes
-- **Status Monitoring**: Real-time status of all components
+### Environment Variables
 
-## Usage Examples
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `FLASK_PORT` | 5000 | Flask API port |
+| `MITMPROXY_PORT` | 8080 | Mitmproxy port |
+| `CDP_PORT` | 9222 | Chromium CDP port |
+| `PROXY_SERVER` | http://127.0.0.1:8080 | Proxy server URL |
+| `USER_DATA_DIR` | /data/chromium | Chromium user data directory |
 
-### Create a Page and Navigate
+### Docker Configuration
 
-```bash
-# Create a new page
-curl -X POST http://localhost:5000/api/page/create
+The `Dockerfile.render` is optimized for Render.com deployment:
 
-# Navigate to URL (replace <page_id>)
-curl -X POST http://localhost:5000/api/page/<page_id>/navigate \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://google.com"}'
+- Installs Chromium system package
+- Installs Playwright and Mitmproxy
+- Configures persistent volume for `/data/chromium`
+- Exposes ports 5000 (API), 8080 (Proxy), 9222 (CDP - internal only)
+
+## 🎨 Web Dashboard
+
+The dashboard at http://localhost:5000 provides:
+
+- **Browser Control**: Start/stop browser, create pages, navigate
+- **DNS Management**: Add/remove custom DNS routes
+- **Proxy Control**: Start/stop Mitmproxy
+- **Traffic Viewer**: View intercepted requests/responses
+- **JavaScript Execution**: Run custom JS on pages
+- **Screenshot Capture**: Capture and view page screenshots
+- **Page Inspector**: View HTML, text content, click elements
+
+## 🔄 WPF Integration
+
+Your WPF application can connect to ProxyBox via HTTP API:
+
+```csharp
+// Example: Create a new browser page
+var client = new HttpClient();
+var response = await client.PostAsync(
+    "http://your-proxybox-url/api/browser/page",
+    new StringContent("{\"url\": \"https://google.com\"}", Encoding.UTF8, "application/json")
+);
+
+// Example: Navigate to URL
+var navigateResponse = await client.PostAsync(
+    "http://your-proxybox-url/api/browser/navigate",
+    new StringContent("{\"page_id\": \"page_1\", \"url\": \"https://example.com\"}", Encoding.UTF8, "application/json")
+);
+
+// Example: Execute JavaScript
+var jsResponse = await client.PostAsync(
+    "http://your-proxybox-url/api/browser/js",
+    new StringContent("{\"page_id\": \"page_1\", \"code\": \"console.log('Hello from WPF!')\"}", Encoding.UTF8, "application/json")
+);
 ```
 
-### Add DNS Route
+## 🔒 Security Considerations
+
+- **CDP Port**: Only bound to `127.0.0.1:9222` - never exposed externally
+- **HTTPS Interception**: Mitmproxy uses `--ssl-insecure` for development
+- **Chromium**: Uses `--ignore-certificate-errors` for Mitmproxy compatibility
+- **No Authentication**: API has no auth by default (add for production)
+
+## 📊 Custom DNS Routing
+
+Add custom DNS routes dynamically without fixed IP addresses:
 
 ```bash
-# Add a DNS route
+# Add a route
 curl -X POST http://localhost:5000/api/dns/routes \
   -H "Content-Type: application/json" \
-  -d '{"domain": "example.com", "ip": "10.58.54.2"}'
+  -d '{"domain": "ilmiosito.com", "ip": "10.58.54.2"}'
 
 # List all routes
 curl http://localhost:5000/api/dns/routes
+
+# Remove a route
+curl -X DELETE http://localhost:5000/api/dns/routes/ilmiosito.com
+
+# Clear all routes
+curl -X DELETE http://localhost:5000/api/dns/routes
 ```
 
-### Take Screenshot
+## 🐳 Deploy to Render.com
 
-```bash
-# Take screenshot (returns base64 encoded image)
-curl -X POST http://localhost:5000/api/page/<page_id>/screenshot \
-  -H "Content-Type: application/json" \
-  -d '{"format": "png", "full_page": true}'
-```
-
-## Integration with WPF (WebView2)
-
-To integrate ProxyBox with a WPF application using WebView2:
-
-### Option 1: Use as External Service
-
-```csharp
-// Configure WebView2 to use ProxyBox as proxy
-var options = new CoreWebView2EnvironmentOptions
-{
-    AdditionalBrowserArguments = $"--proxy-server=http://localhost:8080 --ignore-certificate-errors"
-};
-
-var env = await CoreWebView2Environment.CreateAsync(null, null, options);
-await webView.EnsureCoreWebView2Async(env);
-```
-
-### Option 2: Embed Dashboard
-
-```csharp
-// Navigate to ProxyBox dashboard
-webView.CoreWebView2.Navigate("http://localhost:5000");
-```
-
-### Option 3: Direct API Calls
-
-```csharp
-using (var client = new HttpClient())
-{
-    // Add DNS route
-    var response = await client.PostAsync(
-        "http://localhost:5000/api/dns/routes",
-        new StringContent(
-            JsonConvert.SerializeObject(new { domain = "example.com", ip = "10.58.54.2" }),
-            Encoding.UTF8,
-            "application/json"
-        )
-    );
-}
-```
-
-## Custom DNS Routing
-
-ProxyBox supports custom DNS routing without requiring dnsmasq. Routes are managed in-memory and applied to Mitmproxy:
-
-1. Add a route via API: `POST /api/dns/routes` with `{domain: "example.com", ip: "10.58.54.2"}`
-2. The route is automatically applied to Mitmproxy
-3. All requests to `example.com` will be redirected to `10.58.54.2`
-4. The original Host header is preserved for SNI
-
-## Deployment to Render.com
-
-1. Create a new Web Service
-2. Select "Docker" as the runtime
+1. Create a new **Web Service** on Render.com
+2. Connect your GitHub repository
 3. Configure:
    - **Dockerfile Path**: `Dockerfile.render`
-   - **Build Command**: (leave empty)
-   - **Start Command**: (leave empty - uses CMD from Dockerfile)
-4. Set environment variables:
-   - `PROXY_SERVER`: `http://localhost:8080`
-   - `MITMPROXY_PORT`: `8080`
-   - `FLASK_PORT`: `5000`
+   - **Branch**: `main`
+   - **Region**: Oregon (or your preferred region)
+   - **Compute Plan**: Free or paid (free spins down after inactivity)
+4. Add Environment Variables:
+   - `FLASK_PORT=5000`
+   - `MITMPROXY_PORT=8080`
+   - `CDP_PORT=9222`
+   - `PROXY_SERVER=http://127.0.0.1:8080`
 5. Deploy!
 
-## Troubleshooting
+**Note**: For persistent storage on Render, enable **Persistent Disk** and mount it to `/data/chromium`.
 
-### Mitmproxy Console Error
+## 🧪 Testing
 
-If you see `mitmproxy's console interface requires a tty`, use `mitmdump` instead:
+### Test Browser Functionality
 
 ```bash
-mitmdump -s mitmproxy_script.py --listen-port 8080
+# Start browser
+curl -X POST http://localhost:5000/api/browser/start
+
+# Create page
+curl -X POST http://localhost:5000/api/browser/page \
+  -H "Content-Type: application/json" \
+  -d '{"url": "https://google.com"}'
+
+# Take screenshot
+curl -X POST http://localhost:5000/api/browser/screenshot \
+  -H "Content-Type: application/json" \
+  -d '{"page_id": "page_1"}'
 ```
 
-### Browser Not Starting
+### Test DNS Routing
 
-Ensure all dependencies are installed:
 ```bash
-playwright install chromium --with-deps
+# Add route
+curl -X POST http://localhost:5000/api/dns/routes \
+  -H "Content-Type: application/json" \
+  -d '{"domain": "example.com", "ip": "93.184.216.34"}'
+
+# Navigate to routed domain
+curl -X POST http://localhost:5000/api/browser/navigate \
+  -H "Content-Type: application/json" \
+  -d '{"page_id": "page_1", "url": "https://example.com"}'
 ```
 
-### Template Not Found Error
+## 📝 Architecture Details
 
-Make sure the templates folder exists and contains `index.html`:
+### Chromium Configuration
+
+Chromium runs as standalone process with:
 ```bash
-mkdir -p api/templates
-cp api/templates/index.html api/templates/
+chromium \
+  --remote-debugging-port=9222 \
+  --user-data-dir=/data/chromium \
+  --headless=new \
+  --proxy-server=http://127.0.0.1:8080 \
+  --no-sandbox \
+  --disable-setuid-sandbox \
+  --disable-gpu \
+  --ignore-certificate-errors
 ```
 
-## Project Structure
+### Playwright Connection
 
-```
-proxybox/
-├── api/
-│   ├── app.py              # Flask API backend
-│   ├── mitmproxy_script.py # Mitmproxy traffic handler
-│   ├── dns_manager.py      # DNS route manager
-│   └── templates/
-│       └── index.html      # Web dashboard
-├── docker/
-│   ├── dnsmasq/            # dnsmasq Docker configuration
-│   └── playwright/          # Playwright Docker configuration
-├── Dockerfile.render       # Render.com Dockerfile
-├── docker-compose.yml      # Docker Compose configuration
-└── README.md               # This file
+Playwright connects to existing Chromium via CDP:
+```python
+browser = await playwright.chromium.connect_over_cdp("http://127.0.0.1:9222")
 ```
 
-## Contributing
+### Service Orchestration
+
+The `start.sh` script starts services in order:
+1. Mitmproxy (port 8080)
+2. Chromium standalone (port 9222 CDP)
+3. Flask API (port 5000)
+
+## 🎯 Future Enhancements
+
+- **AI Agents**: Add AI-powered browser automation
+- **Multi-Browser**: Support multiple Chromium instances
+- **Browser Contexts**: Isolated browsing sessions
+- **WebSocket API**: Real-time browser events
+- **Video Recording**: Capture browser sessions
+- **Authentication**: Add API authentication
+- **Rate Limiting**: Protect API endpoints
+
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
 4. Submit a pull request
 
-## License
+## 📄 License
 
-MIT License - feel free to use, modify, and distribute.
-
-## Support
-
-For issues or questions, please open a GitHub issue.
+MIT License - see LICENSE file for details.
 
 ---
 
-**ProxyBox** - Powerful browser automation and traffic interception in a box!
+**Built with**: Chromium, Playwright, Mitmproxy, Flask, Docker
+
+**Maintainer**: [Jack96BO](https://github.com/Jack96BO)
